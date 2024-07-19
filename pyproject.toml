@@ -1,0 +1,32 @@
+[project]
+name = "aiterate-resume"
+version = "0.1.0"
+description = "CLI for iterating on your resume with an LLM."
+authors = [
+    { name = "itsjohncs", email = "johnsullivan.pem@gmail.com" }
+]
+dependencies = [
+    "langchain>=0.2.10",
+    "langchain-openai>=0.1.17",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[project.scripts]
+"aiterate-resume" = "aiterate_resume:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pre-commit>=3.7.1",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aiterate_resume"]
