@@ -1,6 +1,14 @@
-format_prompt: str = """Once you understand the request you MUST describe each change with a reason followed by a *SEARCH/REPLACE block* per the examples below. All changes must use this *SEARCH/REPLACE block* format. All changes must be preceded by a reason.
+format_prompt: str = """Once you understand the request you MUST provide each change as a *SEARCH/REPLACE block* per the examples below. All changes must use this *SEARCH/REPLACE block* format.
 
-This change provides a clearer picture of the technologies used and emphasizes the impact on user engagement and collaboration.
+<<<<<<< SEARCH
+  Proposed designed, and co-built a
+  <a href="https://www.selenium.dev">Selenium</a>
+  end-to-end testing system.
+=======
+  Proposed, designed, and co-built a
+  <a href="https://www.selenium.dev">Selenium</a>
+  end-to-end testing system.
+>>>>>>> REPLACE
 
 <<<<<<< SEARCH
             <li>
