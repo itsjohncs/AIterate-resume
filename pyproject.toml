@@ -23,6 +23,8 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "pre-commit>=3.7.1",
+    "pyright>=1.1.372",
+    "ruff>=0.5.4",
 ]
 
 [tool.hatch.metadata]
