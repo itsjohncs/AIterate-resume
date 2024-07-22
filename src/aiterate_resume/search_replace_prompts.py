@@ -1,5 +1,7 @@
 format_prompt: str = """Once you understand the request you MUST provide each change as a *SEARCH/REPLACE block* per the examples below. All changes must use this *SEARCH/REPLACE block* format.
 
+You MUST provide a reason why each change is needed. Reference specific resume-writing guidelines in each reason. Provide that reason after each *SEARCH/REPLACE block*. Do not write `Reason:` or any other markup to denote that the text is is the reason.
+
 <<<<<<< SEARCH
   Proposed designed, and co-built a
   <a href="https://www.selenium.dev">Selenium</a>
@@ -9,6 +11,8 @@ format_prompt: str = """Once you understand the request you MUST provide each ch
   <a href="https://www.selenium.dev">Selenium</a>
   end-to-end testing system.
 >>>>>>> REPLACE
+
+Missing a comma between "proposed" and "designed." Make sure your writing is grammatically correct.
 
 <<<<<<< SEARCH
             <li>
@@ -32,4 +36,6 @@ format_prompt: str = """Once you understand the request you MUST provide each ch
               collaboration.
             </li>
 >>>>>>> REPLACE
+
+This change provides a clearer picture of the technologies used and emphasizes the impact on user engagement and collaboration.
 """
