@@ -6,16 +6,22 @@ from .search_replace import SearchReplaceParser
 from .system_prompts import system_prompt
 
 
-def main():
+def parse_args():
     # Set up argument parser
-    arg_parser = argparse.ArgumentParser(description="Process a file and send its contents to the AI model.")
-    arg_parser.add_argument("file_path", type=str, help="Path to the file to be processed")
+    arg_parser = argparse.ArgumentParser(description="Iterate on a resume with an AI.")
+    arg_parser.add_argument("resume", type=str, help="Path to the file to be processed")
     args = arg_parser.parse_args()
 
     # Read the contents of the specified file
-    file_path = Path(args.file_path)
-    with file_path.open('r') as file:
-        file_contents = file.read()
+    resume = Path(args.resume)
+    with resume.open("r") as file:
+        resume_contents = file.read()
+
+    return resume_contents
+
+
+def main():
+    resume_contents = parse_args()
 
     parser = SearchReplaceParser()
     model = ChatOpenAI(model="gpt-4")
@@ -23,7 +29,8 @@ def main():
 
     messages = [
         SystemMessage(system_prompt),
-        HumanMessage(content=file_contents)
+        HumanMessage(content="Give suggestions to improve the following resume:"),
+        HumanMessage(content=resume_contents),
     ]
 
     response = chain.invoke(messages)
