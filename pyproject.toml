@@ -13,7 +13,7 @@ readme = "README.md"
 requires-python = ">= 3.12"
 
 [project.scripts]
-"aiterate-resume" = "aiterate_resume:main"
+"aiterate-resume" = "aiterate_resume:cli.main"
 
 [build-system]
 requires = ["hatchling"]
