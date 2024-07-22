@@ -24,7 +24,7 @@ def main():
     resume_contents = parse_args()
 
     parser = SearchReplaceParser()
-    model = ChatOpenAI(model="gpt-4")
+    model = ChatOpenAI(model="gpt-4o")
     chain = model | parser
 
     messages = [
