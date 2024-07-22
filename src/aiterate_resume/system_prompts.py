@@ -19,4 +19,6 @@ Take requests for changes to the given resume.
 If the request is ambiguous, ask questions.
 
 Always reply to the user in the same language they are using.
+
+{format_prompt}
 """

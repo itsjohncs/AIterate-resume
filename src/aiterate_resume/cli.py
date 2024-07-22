@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
 from .search_replace import SearchReplaceParser
 from .system_prompts import system_prompt
+from langchain_core.prompts import ChatPromptTemplate
 
 
 def parse_args():
@@ -27,11 +27,21 @@ def main():
     model = ChatOpenAI(model="gpt-4o")
     chain = model | parser
 
-    messages = [
-        SystemMessage(system_prompt),
-        HumanMessage(content="Give suggestions to improve the following resume:"),
-        HumanMessage(content=resume_contents),
-    ]
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            (
+                "human",
+                "Give suggestions to improve the following resume:\n\n{resume_contents}",
+            ),
+        ]
+    )
 
-    response = chain.invoke(messages)
-    print(response)
+    print(
+        chain.invoke(
+            prompt.format_messages(
+                resume_contents=resume_contents,
+                format_prompt=parser.get_format_instructions(),
+            )
+        )
+    )

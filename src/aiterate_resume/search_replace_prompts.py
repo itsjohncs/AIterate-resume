@@ -1,13 +1,7 @@
-format_prompt = """Once you understand the request you MUST describe each change with a *SEARCH/REPLACE block* per the examples below. All changes must use this *SEARCH/REPLACE block* format. ONLY EVER RETURN CODE IN A *SEARCH/REPLACE BLOCK*!"""
+format_prompt: str = """Once you understand the request you MUST describe each change with a reason followed by a *SEARCH/REPLACE block* per the examples below. All changes must use this *SEARCH/REPLACE block* format. All changes must be preceded by a reason.
 
-example_messages = [
-    dict(
-        role="user",
-        content="Suggest two general improvements to my resume. Keep each suggested improvement small.",
-    ),
-    dict(
-        role="assistant",
-        content="""```
+This change provides a clearer picture of the technologies used and emphasizes the impact on user engagement and collaboration.
+
 <<<<<<< SEARCH
             <li>
               Built a feature-rich map editor using React, TypeScript, and the
@@ -30,23 +24,4 @@ example_messages = [
               collaboration.
             </li>
 >>>>>>> REPLACE
-```
-This change provides a clearer picture of the technologies used and emphasizes the impact on user engagement and collaboration.
-
-```
-<<<<<<< SEARCH
-        <summary>
-          Built Unity simulations and editor extensions for their YouTube
-          channel with 1.7M subscribers.
-        </summary>
-=======
-        <summary>
-          Developed Unity simulations and editor extensions, enhancing
-          educational content for a YouTube channel with 1.7M subscribers.
-        </summary>
->>>>>>> REPLACE
-```
-This change emphasizes the role in improving educational content and provides a clearer context for the impact.
-""",
-    ),
-]
+"""
