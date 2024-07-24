@@ -1,7 +1,7 @@
 import argparse
 import os
 from pathlib import Path
-import openai
+from openai import OpenAI
 from .search_replace import SearchReplaceParser
 from .system_prompts import system_prompt
 
@@ -29,7 +29,7 @@ def main():
     if "OPENAI_API_KEY" not in os.environ:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-    openai.api_key = os.environ["OPENAI_API_KEY"]
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     # Prepare the messages for the API call
     messages = [
