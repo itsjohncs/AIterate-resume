@@ -1,9 +1,9 @@
 import argparse
+import os
 from pathlib import Path
-from langchain_openai import ChatOpenAI
+import openai
 from .search_replace import SearchReplaceParser
 from .system_prompts import system_prompt
-from langchain_core.prompts import ChatPromptTemplate
 
 
 def parse_args():
@@ -24,24 +24,38 @@ def main():
     resume_contents = parse_args()
 
     parser = SearchReplaceParser()
-    model = ChatOpenAI(model="gpt-4o")
-    chain = model | parser
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            (
-                "human",
-                "Give suggestions to improve the following resume:\n\n{resume_contents}",
-            ),
-        ]
-    )
+    # Ensure OpenAI API key is set
+    if "OPENAI_API_KEY" not in os.environ:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-    print(
-        chain.invoke(
-            prompt.format_messages(
-                resume_contents=resume_contents,
-                format_prompt=parser.get_format_instructions(),
-            )
-        )
-    )
+    openai.api_key = os.environ["OPENAI_API_KEY"]
+
+    # Prepare the messages for the API call
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {
+            "role": "user",
+            "content": f"Give suggestions to improve the following resume:\n\n{resume_contents}",
+        },
+        {
+            "role": "user",
+            "content": f"Format your response according to these instructions:\n\n{parser.get_format_instructions()}",
+        },
+    ]
+
+    # Make the API call
+    response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+
+    # Extract the content from the response
+    ai_suggestions = response.choices[0].message.content
+
+    # Parse the suggestions using the existing SearchReplaceParser
+    parsed_suggestions = parser.parse(ai_suggestions)
+
+    # Print the parsed suggestions
+    for suggestion in parsed_suggestions:
+        print(f"Search:\n{suggestion.search}\n")
+        print(f"Replace:\n{suggestion.replace}\n")
+        print(f"Reason:\n{suggestion.reason}\n")
+        print("-" * 50)
