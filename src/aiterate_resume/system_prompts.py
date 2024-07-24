@@ -17,7 +17,6 @@ The resume will be formatted as plain text, LaTeX, or HTML.
 Preserve the existing markup and indentation when making changes. Do not remove links or other markup from text. PRESERVE THE EXISTING MARKUP AND INDENTATION.
 
 Take requests for changes to the given resume.
-If the request is ambiguous, ask questions.
 
 Always reply to the user in the same language they are using.
 
