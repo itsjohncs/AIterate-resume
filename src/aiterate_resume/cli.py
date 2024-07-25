@@ -19,14 +19,11 @@ from . import search_replace_prompts
 
 class Console:
     def __init__(self, verbose: bool = False):
-        self.seen_messages: set[int] = set()
         self.verbose = verbose
 
-    def print_message(self, message: ChatCompletionMessageParam):
-        if not self.verbose or id(message) in self.seen_messages:
+    def print_message(self, message: ChatCompletionMessageParam, verbose_level=False):
+        if verbose_level and not self.verbose:
             return
-
-        self.seen_messages.add(id(message))
 
         role = message["role"]
         content = message.get("content")
@@ -36,6 +33,12 @@ class Console:
             color = "green" if role == "assistant" else "blue"
             for line in content.splitlines():
                 rprint(f"[{color}]> {escape(line)}[/{color}]")
+
+    def print_messages(
+        self, messages: list[ChatCompletionMessageParam], verbose_level=False
+    ) -> None:
+        for message in messages:
+            self.print_message(message, verbose_level)
 
     def expected_fatal_error(self, exception: Exception) -> None:
         rprint(f"[red]{exception}[/red]")
@@ -80,8 +83,11 @@ def main():
         },
     ]
 
-    for message in messages:
-        console.print_message(message)
+    console.print_messages(messages, True)
+
+    def append_message(message: ChatCompletionMessageParam) -> None:
+        messages.append(message)
+        console.print_message(message, True)
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -91,7 +97,7 @@ def main():
     max_retries = 3
     parsed_suggestions = []
     for attempt in range(max_retries):
-        messages.append(
+        append_message(
             {"role": "assistant", "content": response.choices[0].message.content}
         )
         raw_text = response.choices[0].message.content
@@ -105,17 +111,12 @@ def main():
             if attempt == max_retries - 1:
                 console.expected_fatal_error(
                     RuntimeError(
-                        f"Failed to parse suggestions after {max_retries} attempts."
+                        f"Failed to parse suggestions after {max_retries} attempt: {e}"
                     )
                 )
-                raise
 
             error_message = f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format."
-            messages.append({"role": "system", "content": error_message})
-            print(f"Failed to parse response...\n\t{error_message}")
-
-            for message in messages:
-                console.print_message(message)
+            append_message({"role": "system", "content": error_message})
 
             response = client.chat.completions.create(
                 model="gpt-4o",
