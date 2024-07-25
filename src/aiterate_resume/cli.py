@@ -62,6 +62,31 @@ def parse_args():
     return args, resume_contents
 
 
+class ChatSession:
+    def __init__(self, client: OpenAI, console: Console):
+        self.client = client
+        self.console = console
+        self.messages: list[ChatCompletionMessageParam] = []
+
+    def send_messages(self, messages: list[ChatCompletionMessageParam]):
+        self.messages.extend(messages)
+        self.console.print_messages(messages)
+
+        response = self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=self.messages,
+        )
+
+        response_message: ChatCompletionMessageParam = {
+            "role": "assistant",
+            "content": response.choices[0].message.content,
+        }
+        self.messages.append(response_message)
+        self.console.print_message(response_message)
+
+        return response
+
+
 def main():
     args, resume_contents = parse_args()
     console = Console(verbose=args.verbose)
@@ -71,35 +96,23 @@ def main():
             ValueError("OPENAI_API_KEY environment variable is not set")
         )
 
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    session = ChatSession(OpenAI(api_key=os.environ["OPENAI_API_KEY"]), console)
 
-    messages: list[ChatCompletionMessageParam] = [
-        {"role": "system", "content": system_prompt},
-        {"role": "system", "content": search_replace_prompts.format_prompt},
-        *search_replace_prompts.examples,
-        {
-            "role": "user",
-            "content": f"Provide changes to improve the following resume:\n\n{resume_contents}",
-        },
-    ]
-
-    console.print_messages(messages, True)
-
-    def append_message(message: ChatCompletionMessageParam) -> None:
-        messages.append(message)
-        console.print_message(message, True)
-
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
+    response = session.send_messages(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": search_replace_prompts.format_prompt},
+            *search_replace_prompts.examples,
+            {
+                "role": "user",
+                "content": f"Provide changes to improve the following resume:\n\n{resume_contents}",
+            },
+        ]
     )
 
     max_retries = 3
     parsed_suggestions = []
     for attempt in range(max_retries):
-        append_message(
-            {"role": "assistant", "content": response.choices[0].message.content}
-        )
         raw_text = response.choices[0].message.content
         if not raw_text:
             raise ValueError("Got empty response.")
@@ -115,12 +128,13 @@ def main():
                     )
                 )
 
-            error_message = f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format."
-            append_message({"role": "system", "content": error_message})
-
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
+            response = session.send_messages(
+                [
+                    {
+                        "role": "system",
+                        "content": f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format.",
+                    }
+                ]
             )
 
     if not parsed_suggestions:
