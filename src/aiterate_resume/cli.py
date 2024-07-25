@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from openai import OpenAI
 
+from .search_replace import SearchReplaceResult, MultipleReplacementsError, NoReplacementError
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from aiterate_resume.search_replace import execute_search_replace
 from .search_replace_format import (
@@ -28,6 +29,48 @@ def parse_args():
     return resume_contents
 
 
+def send_messages(client: OpenAI, messages: list[ChatCompletionMessageParam], max_requests) -> (int, list[SearchReplaceResult]):
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+    )
+
+    parsed_suggestions: list[SearchReplaceResult] = []
+    for attempt in range(max_requests):
+        messages.append(
+            {"role": "assistant", "content": response.choices[0].message.content}
+        )
+        raw_text = response.choices[0].message.content
+        if not raw_text:
+            raise ValueError("Got empty response.")
+
+        print(raw_text)
+        print("=" * 5)
+
+        try:
+            parsed_suggestions = parse_search_replace_text(raw_text)
+            break
+        except (UnexpectedFenceError, UnexpectedEndOfInput) as e:
+            if attempt == max_requests - 1:
+                print(f"Failed to parse suggestions after {max_requests} attempts.")
+                raise
+
+            error_message = f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format."
+            messages.append({"role": "system", "content": error_message})
+            print(f"Failed to parse response...\n\t{error_message}")
+
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+            )
+
+    if not parsed_suggestions:
+        raise ValueError("No valid suggestions were parsed.")
+        return
+    
+    return (attempt + 1, parsed_suggestions)
+
+
 def main():
     resume_contents = parse_args()
 
@@ -46,44 +89,10 @@ def main():
         },
     ]
 
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-    )
+    remaining_requests = 4
 
-    max_retries = 3
-    parsed_suggestions = []
-    for attempt in range(max_retries):
-        messages.append(
-            {"role": "assistant", "content": response.choices[0].message.content}
-        )
-        raw_text = response.choices[0].message.content
-        if not raw_text:
-            raise ValueError("Got empty response.")
-
-        print(raw_text)
-        print("=" * 5)
-
-        try:
-            parsed_suggestions = parse_search_replace_text(raw_text)
-            break
-        except (UnexpectedFenceError, UnexpectedEndOfInput) as e:
-            if attempt == max_retries - 1:
-                print(f"Failed to parse suggestions after {max_retries} attempts.")
-                raise
-
-            error_message = f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format."
-            messages.append({"role": "system", "content": error_message})
-            print(f"Failed to parse response...\n\t{error_message}")
-
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-            )
-
-    if not parsed_suggestions:
-        print("No valid suggestions were parsed.")
-        return
+    num_requests_made, parsed_suggestions = send_messages(client, messages, remaining_requests)
+    remaining_requests -= num_requests_made
 
     # Print the parsed suggestions
     for suggestion in parsed_suggestions:
@@ -93,9 +102,24 @@ def main():
         print("-" * 5)
 
     changed_contents = resume_contents
-    for suggestion in parsed_suggestions:
-        changed_contents = execute_search_replace(suggestion, changed_contents)
-        print(f"Applied {suggestion}")
+    while True:
+        errors: list[(SearchReplaceResult, MultipleReplacementsError | NoReplacementError)] = []
+        for suggestion in parsed_suggestions:
+            try:
+                changed_contents = execute_search_replace(suggestion, changed_contents)
+                print(f"Applied {suggestion}")
+            except (MultipleReplacementsError, NoReplacementError) as e:
+                errors.append((suggestion, e))
+        
+        if errors:
+            if remaining_requests <= 0:
+                raise RuntimeError("Out of attempts.")
+
+            for suggestion, error in errors:
+                messages.append({"role": "system", "content": f"There was an error applying the following *SEARCH/REPLACE block* {error}\n\n{suggestion.to_block()}"})
+            
+            num_requests_made, parsed_suggestions = send_messages(client, messages, remaining_requests)
+            remaining_requests -= num_requests_made
 
     print("=" * 5)
     print(changed_contents)

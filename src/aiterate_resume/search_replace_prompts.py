@@ -58,3 +58,25 @@ This change provides a clearer picture of the technologies used and emphasizes t
         "content": "Thank you. I'm done with that resume now. Please don't give any more improvements regarding that resume.",
     },
 ]
+
+reminder_prompt: str = """# *SEARCH/REPLACE block* Rules:
+
+Every *SEARCH/REPLACE block* must use this format:
+1. The start of search block: <<<<<<< SEARCH
+2. A contiguous chunk of lines to search for in the existing resume
+3. The dividing line: =======
+4. The lines to replace into the resume
+5. The end of the replace block: >>>>>>> REPLACE
+6. The reason for the change.
+
+Every *SEARCH* section must *EXACTLY MATCH* the existing resume, character for character, including all comments, tags, etc.
+
+Include enough lines to make the SEARCH blocks uniquely match the lines to change.
+
+Keep *SEARCH/REPLACE* blocks concise.
+Break large *SEARCH/REPLACE* blocks into a series of smaller blocks that each change a small portion of the resume.
+Include just the changing lines, and a few surrounding lines if needed for uniqueness.
+Do not include long runs of unchanging lines in *SEARCH/REPLACE* blocks.
+
+To move code within the resume, use 2 *SEARCH/REPLACE* blocks: 1 to delete it from its current location, 1 to insert it in the new location.
+"""
