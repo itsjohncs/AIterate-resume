@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 from openai import OpenAI
-from .search_replace import parse_search_replace_text
+from .search_replace_format import parse_search_replace_text
 from .system_prompts import system_prompt
 from . import search_replace_prompts
 

@@ -1,5 +1,5 @@
 import pytest
-from aiterate_resume.search_replace import (
+from aiterate_resume.search_replace_format import (
     UnexpectedEndOfInput,
     parse_search_replace_text,
     SearchReplaceResult,
