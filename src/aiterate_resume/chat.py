@@ -29,8 +29,8 @@ class Console:
         for message in messages:
             self.print_message(message, verbose_level)
 
-    def expected_fatal_error(self, exception: Exception) -> None:
-        rprint(f"[red]{exception}[/red]")
+    def quit(self, message: str) -> None:
+        rprint(f"[red]{message}[/red]")
         sys.exit(1)
 
 

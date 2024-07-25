@@ -41,9 +41,7 @@ def main():
     console = Console(verbose=args.verbose)
 
     if "OPENAI_API_KEY" not in os.environ:
-        console.expected_fatal_error(
-            ValueError("OPENAI_API_KEY environment variable is not set")
-        )
+        console.quit("OPENAI_API_KEY environment variable is not set")
 
     session = ChatSession(OpenAI(api_key=os.environ["OPENAI_API_KEY"]), console)
 
@@ -71,10 +69,8 @@ def main():
             parsed_suggestions = parse_search_replace_text(raw_text)
         except (UnexpectedFenceError, UnexpectedEndOfInput) as e:
             if attempt == max_retries - 1:
-                console.expected_fatal_error(
-                    RuntimeError(
-                        f"Failed to parse suggestions after {max_retries} attempt: {e}"
-                    )
+                console.quit(
+                    f"Failed to parse suggestions after {max_retries} attempt: {e}"
                 )
 
             response = session.send_messages(
@@ -105,6 +101,6 @@ def main():
         else:
             break
     else:
-        console.expected_fatal_error(RuntimeError("Ran out of reflection attempts."))
+        console.quit("Ran out of reflection attempts.")
 
     print(changed_contents)
