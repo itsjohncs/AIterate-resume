@@ -18,11 +18,12 @@ from . import search_replace_prompts
 
 
 class Console:
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
         self.seen_messages: set[int] = set()
+        self.verbose = verbose
 
     def print_message(self, message: ChatCompletionMessageParam):
-        if id(message) in self.seen_messages:
+        if not self.verbose or id(message) in self.seen_messages:
             return
 
         self.seen_messages.add(id(message))
@@ -45,6 +46,9 @@ def parse_args():
     # Set up argument parser
     arg_parser = argparse.ArgumentParser(description="Iterate on a resume with an AI.")
     arg_parser.add_argument("resume", type=str, help="Path to the file to be processed")
+    arg_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output"
+    )
     args = arg_parser.parse_args()
 
     # Read the contents of the specified file
@@ -52,13 +56,12 @@ def parse_args():
     with resume.open("r") as file:
         resume_contents = file.read()
 
-    return resume_contents
+    return args, resume_contents
 
 
 def main():
-    console = Console()
-
-    resume_contents = parse_args()
+    args, resume_contents = parse_args()
+    console = Console(verbose=args.verbose)
 
     if "OPENAI_API_KEY" not in os.environ:
         console.expected_fatal_error(
