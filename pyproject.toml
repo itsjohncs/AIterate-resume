@@ -33,3 +33,7 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aiterate_resume"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
