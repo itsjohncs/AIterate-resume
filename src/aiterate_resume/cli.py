@@ -1,7 +1,10 @@
 import argparse
 import os
+import sys
 from pathlib import Path
 from openai import OpenAI
+from rich import print as rprint
+from rich.markup import escape
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from aiterate_resume.search_replace import execute_search_replace
@@ -12,6 +15,30 @@ from .search_replace_format import (
 )
 from .system_prompts import system_prompt
 from . import search_replace_prompts
+
+
+class Console:
+    def __init__(self):
+        self.seen_messages: set[int] = set()
+
+    def print_message(self, message: ChatCompletionMessageParam):
+        if id(message) in self.seen_messages:
+            return
+
+        self.seen_messages.add(id(message))
+
+        role = message["role"]
+        content = message.get("content")
+        if isinstance(content, str):
+            rprint(f"[underline]{role}[/underline]")
+
+            color = "green" if role == "assistant" else "blue"
+            for line in content.splitlines():
+                rprint(f"[{color}]> {escape(line)}[/{color}]")
+
+    def expected_fatal_error(self, exception: Exception) -> None:
+        rprint(f"[red]{exception}[/red]")
+        sys.exit(1)
 
 
 def parse_args():
@@ -29,10 +56,14 @@ def parse_args():
 
 
 def main():
+    console = Console()
+
     resume_contents = parse_args()
 
     if "OPENAI_API_KEY" not in os.environ:
-        raise ValueError("OPENAI_API_KEY environment variable is not set")
+        console.expected_fatal_error(
+            ValueError("OPENAI_API_KEY environment variable is not set")
+        )
 
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
@@ -45,6 +76,9 @@ def main():
             "content": f"Provide changes to improve the following resume:\n\n{resume_contents}",
         },
     ]
+
+    for message in messages:
+        console.print_message(message)
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -61,20 +95,24 @@ def main():
         if not raw_text:
             raise ValueError("Got empty response.")
 
-        print(raw_text)
-        print("=" * 5)
-
         try:
             parsed_suggestions = parse_search_replace_text(raw_text)
             break
         except (UnexpectedFenceError, UnexpectedEndOfInput) as e:
             if attempt == max_retries - 1:
-                print(f"Failed to parse suggestions after {max_retries} attempts.")
+                console.expected_fatal_error(
+                    RuntimeError(
+                        f"Failed to parse suggestions after {max_retries} attempts."
+                    )
+                )
                 raise
 
             error_message = f"Your response was not in the correct *SEARCH/REPLACE block* format. Trying to parse it gave the error: {str(e)}. Please try again, ensuring your response follows the correct format."
             messages.append({"role": "system", "content": error_message})
             print(f"Failed to parse response...\n\t{error_message}")
+
+            for message in messages:
+                console.print_message(message)
 
             response = client.chat.completions.create(
                 model="gpt-4o",
@@ -82,20 +120,11 @@ def main():
             )
 
     if not parsed_suggestions:
-        print("No valid suggestions were parsed.")
+        console.expected_fatal_error(ValueError("No valid suggestions were parsed."))
         return
-
-    # Print the parsed suggestions
-    for suggestion in parsed_suggestions:
-        print(f"Search:\n{suggestion.search}\n")
-        print(f"Replace:\n{suggestion.replace}\n")
-        print(f"Reason:\n{suggestion.reason}\n")
-        print("-" * 5)
 
     changed_contents = resume_contents
     for suggestion in parsed_suggestions:
         changed_contents = execute_search_replace(suggestion, changed_contents)
-        print(f"Applied {suggestion}")
 
-    print("=" * 5)
     print(changed_contents)
