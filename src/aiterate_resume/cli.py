@@ -7,7 +7,11 @@ from rich import print as rprint
 from rich.markup import escape
 
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from aiterate_resume.search_replace import execute_search_replace
+from aiterate_resume.search_replace import (
+    MultipleReplacementsError,
+    NoReplacementError,
+    execute_search_replace,
+)
 from .search_replace_format import (
     parse_search_replace_text,
     UnexpectedFenceError,
@@ -110,6 +114,7 @@ def main():
         ]
     )
 
+    changed_contents = resume_contents
     max_retries = 3
     parsed_suggestions = []
     for attempt in range(max_retries):
@@ -119,7 +124,6 @@ def main():
 
         try:
             parsed_suggestions = parse_search_replace_text(raw_text)
-            break
         except (UnexpectedFenceError, UnexpectedEndOfInput) as e:
             if attempt == max_retries - 1:
                 console.expected_fatal_error(
@@ -136,13 +140,26 @@ def main():
                     }
                 ]
             )
+            continue
 
-    if not parsed_suggestions:
-        console.expected_fatal_error(ValueError("No valid suggestions were parsed."))
-        return
+        error_messages: list[ChatCompletionMessageParam] = []
+        for suggestion in parsed_suggestions:
+            try:
+                changed_contents = execute_search_replace(suggestion, changed_contents)
+            except (MultipleReplacementsError, NoReplacementError) as e:
+                error_messages.append(
+                    {
+                        "role": "system",
+                        "content": f"There was an error applying the following *SEARCH/REPLACE block* {e}\n\n{suggestion.to_block()}",
+                    }
+                )
 
-    changed_contents = resume_contents
-    for suggestion in parsed_suggestions:
-        changed_contents = execute_search_replace(suggestion, changed_contents)
+        if error_messages:
+            response = session.send_messages(error_messages)
+            continue
+        else:
+            break
+    else:
+        console.expected_fatal_error(RuntimeError("Ran out of reflection attempts."))
 
     print(changed_contents)
