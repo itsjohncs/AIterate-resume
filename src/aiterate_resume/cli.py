@@ -2,6 +2,8 @@ import argparse
 import os
 from pathlib import Path
 from openai import OpenAI
+
+from aiterate_resume.search_replace import execute_search_replace
 from .search_replace_format import parse_search_replace_text
 from .system_prompts import system_prompt
 from . import search_replace_prompts
@@ -57,3 +59,11 @@ def main():
         print(f"Replace:\n{suggestion.replace}\n")
         print(f"Reason:\n{suggestion.reason}\n")
         print("-" * 5)
+
+    changed_contents = resume_contents
+    for suggestion in parsed_suggestions:
+        execute_search_replace(suggestion, changed_contents)
+        print(f"Applied {suggestion}")
+
+    print("=" * 5)
+    print(changed_contents)
