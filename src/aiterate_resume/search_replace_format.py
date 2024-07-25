@@ -1,11 +1,6 @@
 from typing import NamedTuple
 from enum import Enum
-
-
-class SearchReplaceResult(NamedTuple):
-    search: str
-    replace: str
-    reason: str
+from .search_replace import SearchReplaceResult
 
 
 class ParserState(Enum):
