@@ -19,6 +19,4 @@ Preserve the existing markup and indentation when making changes. Do not remove 
 Take requests for changes to the given resume.
 
 Always reply to the user in the same language they are using.
-
-{format_prompt}
 """

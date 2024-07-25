@@ -2,8 +2,9 @@ import argparse
 import os
 from pathlib import Path
 from openai import OpenAI
-from .search_replace import SearchReplaceParser
+from .search_replace import parse_search_replace_text
 from .system_prompts import system_prompt
+from .search_replace_prompts import format_prompt
 
 
 def parse_args():
@@ -23,39 +24,35 @@ def parse_args():
 def main():
     resume_contents = parse_args()
 
-    parser = SearchReplaceParser()
-
-    # Ensure OpenAI API key is set
     if "OPENAI_API_KEY" not in os.environ:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
 
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-    # Prepare the messages for the API call
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {
-            "role": "user",
-            "content": f"Give suggestions to improve the following resume:\n\n{resume_contents}",
-        },
-        {
-            "role": "user",
-            "content": f"Format your response according to these instructions:\n\n{parser.get_format_instructions()}",
-        },
-    ]
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": format_prompt},
+            {
+                "role": "user",
+                "content": f"Provide changes to improve the following resume:\n\n{resume_contents}",
+            },
+        ],
+    )
 
-    # Make the API call
-    response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    raw_text = response.choices[0].message.content
+    if not raw_text:
+        raise ValueError("Got empty response.")
 
-    # Extract the content from the response
-    ai_suggestions = response.choices[0].message.content
+    print(raw_text)
+    print("=" * 5)
 
-    # Parse the suggestions using the existing SearchReplaceParser
-    parsed_suggestions = parser.parse(ai_suggestions)
+    parsed_suggestions = parse_search_replace_text(raw_text)
 
     # Print the parsed suggestions
     for suggestion in parsed_suggestions:
         print(f"Search:\n{suggestion.search}\n")
         print(f"Replace:\n{suggestion.replace}\n")
         print(f"Reason:\n{suggestion.reason}\n")
-        print("-" * 50)
+        print("-" * 5)

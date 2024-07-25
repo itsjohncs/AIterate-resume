@@ -6,8 +6,7 @@ authors = [
     { name = "itsjohncs", email = "johnsullivan.pem@gmail.com" }
 ]
 dependencies = [
-    "langchain>=0.2.10",
-    "langchain-openai>=0.1.17",
+    "openai>=1.37.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"

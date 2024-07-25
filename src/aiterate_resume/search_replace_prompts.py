@@ -4,6 +4,8 @@ You MUST provide a reason why each change is needed. Reference specific resume-w
 
 Do not provide any other text or formatting outside of the *SEARCH/REPLACE* blocks and reasons. Do not break the changes into sections. DO NOT PROVIDE ANY OTHER TEXT OR FORMATTING OUTSIDE OF THE *SEARCH/REPLACE* BLOCKS AND REASONS.
 
+Here are examples of *SEARCH/REPLACE* blocks and reasons.
+
 <<<<<<< SEARCH
 Proposed designed, and co-built a
 <a href="https://www.selenium.dev">Selenium</a>

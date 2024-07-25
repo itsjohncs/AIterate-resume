@@ -1,7 +1,5 @@
 from typing import NamedTuple
 from enum import Enum
-from langchain_core.output_parsers.base import BaseOutputParser
-from .search_replace_prompts import format_prompt
 
 
 class SearchReplaceResult(NamedTuple):
@@ -110,15 +108,3 @@ def parse_search_replace_text(text: str) -> list[SearchReplaceResult]:
         raise UnexpectedEndOfInput(STATE_TO_FENCE[state])
 
     return results
-
-
-class SearchReplaceParser(BaseOutputParser[list[SearchReplaceResult]]):
-    def parse(self, text: str) -> list[SearchReplaceResult]:
-        return parse_search_replace_text(text)
-
-    @property
-    def _type(self) -> str:
-        return "search_replace_parser"
-
-    def get_format_instructions(self) -> str:
-        return format_prompt
