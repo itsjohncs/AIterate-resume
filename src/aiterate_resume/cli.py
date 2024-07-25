@@ -4,7 +4,7 @@ from pathlib import Path
 from openai import OpenAI
 from .search_replace import parse_search_replace_text
 from .system_prompts import system_prompt
-from .search_replace_prompts import format_prompt
+from . import search_replace_prompts
 
 
 def parse_args():
@@ -33,7 +33,8 @@ def main():
         model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "system", "content": format_prompt},
+            {"role": "system", "content": search_replace_prompts.format_prompt},
+            *search_replace_prompts.examples,
             {
                 "role": "user",
                 "content": f"Provide changes to improve the following resume:\n\n{resume_contents}",
