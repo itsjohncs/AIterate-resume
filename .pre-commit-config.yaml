@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.5.3
+  rev: v0.5.5
   hooks:
     - id: ruff
       args: [ --fix ]
@@ -9,3 +9,7 @@ repos:
   rev: v1.1.373
   hooks:
   - id: pyright
+- repo: https://github.com/itsjohncs/rye-pre-commit
+  rev: v0.1.0
+  hooks:
+  - id: rye-test
